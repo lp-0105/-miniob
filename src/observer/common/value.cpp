@@ -19,6 +19,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/sstream.h"
 #include "common/lang/string.h"
 #include "common/log/log.h"
+#include "common/type/date_value.h"
 
 Value::Value(int val) { set_int(val); }
 
@@ -30,6 +31,33 @@ Value::Value(const char *s, int len /*= 0*/) { set_string(s, len); }
 
 Value::Value(const string_t& s) { set_string(s.data(), s.size()); }
 
+// 日期构造函数
+Value::Value(const DateValue &date_val) : attr_type_(AttrType::DATES) {
+    int date_int = date_val.to_int();
+    set_data(reinterpret_cast<char*>(&date_int), sizeof(int));
+}
+
+DateValue Value::get_date() const {
+    if (attr_type_ != AttrType::DATES) {
+        // 如果不是日期类型，尝试转换
+        Value temp;
+        if (cast_to(*this, AttrType::DATES, temp) == RC::SUCCESS) {
+            return temp.get_date();
+        }
+        return DateValue(); // 返回默认日期
+    }
+    
+    int date_int = *reinterpret_cast<const int*>(data());
+    return DateValue::from_int(date_int);
+}
+
+// 设置日期值
+void Value::set_date(const DateValue &date_val) {
+    reset();
+    attr_type_ = AttrType::DATES;
+    int date_int = date_val.to_int();
+    set_data(reinterpret_cast<char*>(&date_int), sizeof(int));
+}
 
 Value::Value(const Value &other)
 {
@@ -236,6 +264,12 @@ char *Value::data() const
 
 string Value::to_string() const
 {
+  switch (attr_type_) {
+        case AttrType::DATES: {
+            return get_date().to_string();
+        }
+        // ... 其他类型的处理保持不变
+    }
   string res;
   RC     rc = DataType::type_instance(this->attr_type_)->to_string(*this, res);
   if (OB_FAIL(rc)) {
@@ -245,7 +279,17 @@ string Value::to_string() const
   return res;
 }
 
-int Value::compare(const Value &other) const { return DataType::type_instance(this->attr_type_)->compare(*this, other); }
+int Value::compare(const Value &other) const {
+  if (attr_type_ == AttrType::DATES && other.attr_type_ == AttrType::DATES) {
+        DateValue date1 = get_date();
+        DateValue date2 = other.get_date();
+        if (date1 < date2) return -1;
+        if (date1 == date2) return 0;
+        return 1;
+    }
+  
+  return DataType::type_instance(this->attr_type_)->compare(*this, other); 
+}
 
 int Value::get_int() const
 {

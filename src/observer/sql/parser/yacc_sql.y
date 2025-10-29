@@ -155,6 +155,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %token <floats> FLOAT
 %token <cstring> ID
 %token <cstring> SSS
+%token DATE_LITERAL
+%token TOK_DATE
 //非终结符
 
 /** type 定义了各种解析后的结果输出的是什么类型。类型对应了 union 中的定义的成员变量名称 **/
@@ -381,6 +383,8 @@ type:
     | STRING_T { $$ = static_cast<int>(AttrType::CHARS); }
     | FLOAT_T  { $$ = static_cast<int>(AttrType::FLOATS); }
     | VECTOR_T { $$ = static_cast<int>(AttrType::VECTORS); }
+    | TOK_DATE { $$
+ = static_cast<int>(AttrType::DATES); }  // 新增日期类型
     ;
 primary_key:
     /* empty */
@@ -437,14 +441,19 @@ value:
       $$ = new Value((int)$1);
       @$ = @1;
     }
-    |FLOAT {
-      $$ = new Value((float)$1);
+    | FLOAT {
+      $$
+ = new Value((float)$1);
       @$ = @1;
     }
-    |SSS {
+    | SSS {
       char *tmp = common::substr($1,1,strlen($1)-2);
       $$ = new Value(tmp);
       free(tmp);
+    }
+    | DATE_LITERAL {  // 新增日期字面量
+      $$ = parse_date_literal($1);
+      free($1);
     }
     ;
 storage_format:
@@ -774,7 +783,21 @@ opt_semicolon: /*empty*/
 %%
 //_____________________________________________________________________
 extern void scan_string(const char *str, yyscan_t scanner);
-
+// 新增日期解析函数
+Value* parse_date_literal(const char* date_str) {
+    // 解析 'YYYY-MM-DD' 格式
+    int year, month, day;
+    if (sscanf(date_str, "'%d-%d-%d'", &year, &month, &day) == 3) {
+        // 创建日期值
+        // 这里需要根据您的 Value 类实现来创建日期值
+        // 暂时先返回字符串值作为占位符
+        char *tmp = common::substr(date_str, 1, strlen(date_str)-2);
+        Value* value = new Value(tmp);
+        free(tmp);
+        return value;
+    }
+    return nullptr; // 无效日期
+}
 int sql_parse(const char *s, ParsedSqlResult *sql_result) {
   yyscan_t scanner;
   std::vector<char *> allocated_strings;

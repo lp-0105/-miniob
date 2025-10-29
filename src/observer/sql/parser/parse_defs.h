@@ -19,13 +19,28 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/memory.h"
 #include "common/value.h"
 #include "common/lang/utility.h"
+enum AttrType {
+    INTS = 0,
+    FLOATS,
+    CHARS,
+    VECTORS,
+    DATES  // 新增日期类型
+};
 
 class Expression;
 
 /**
  * @defgroup SQLParser SQL Parser
  */
-
+struct DateValue {
+    int year;
+    int month;
+    int day;
+    
+    bool is_valid() const;
+    static bool is_leap_year(int year);
+    int to_int() const; // 转换为整数存储
+};
 /**
  * @brief 描述一个属性
  * @ingroup SQLParser
@@ -146,6 +161,13 @@ struct AttrInfoSqlNode
   AttrType type;    ///< Type of attribute
   string   name;    ///< Attribute name
   size_t   length;  ///< Length of attribute
+  // 添加构造函数和日期类型支持
+  AttrInfoSqlNode() : type(INTS), name(""), length(0) {}
+  
+  void set_date_type() {
+      type = DATES;
+      length = sizeof(DateValue); // 或者使用固定长度 10 (YYYY-MM-DD)
+  }
 };
 
 /**
@@ -294,6 +316,7 @@ enum SqlCommandFlag
   SCF_EXPLAIN,
   SCF_SET_VARIABLE,  ///< 设置变量
 };
+
 /**
  * @brief 表示一个SQL语句
  * @ingroup SQLParser
@@ -337,3 +360,26 @@ public:
 private:
   vector<unique_ptr<ParsedSqlNode>> sql_nodes_;  ///< 这里记录SQL命令。虽然看起来支持多个，但是当前仅处理一个
 };
+// 实现 DateValue 的方法
+inline bool DateValue::is_valid() const {
+    // 检查范围
+    if (year < 1970 || year > 2038) return false;
+    if (month < 1 || month > 12) return false;
+    
+    // 每月天数
+    int days_in_month[] = {31,28,31,30,31,30,31,31,30,31,30,31};
+    if (is_leap_year(year)) {
+        days_in_month[1] = 29; // 闰年2月29天
+    }
+    
+    if (day < 1 || day > days_in_month[month-1]) return false;
+    return true;
+}
+
+inline bool DateValue::is_leap_year(int year) {
+    return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+}
+
+inline int DateValue::to_int() const {
+    return year * 10000 + month * 100 + day;
+}
