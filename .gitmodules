@@ -1,15 +1,19 @@
 [submodule "deps/3rd/libevent"]
 	path = deps/3rd/libevent
-	url = https://github.com/libevent/libevent
+	url = https://github.com/libevent/libevent.git
+
 [submodule "deps/3rd/jsoncpp"]
 	path = deps/3rd/jsoncpp
-	url = https://github.com/open-source-parsers/jsoncpp
+	url = https://github.com/open-source-parsers/jsoncpp.git
+
 [submodule "deps/3rd/googletest"]
 	path = deps/3rd/googletest
-	url = https://github.com/google/googletest
+	url = https://github.com/google/googletest.git
+
 [submodule "deps/3rd/benchmark"]
 	path = deps/3rd/benchmark
-	url = https://github.com/google/benchmark
+	url = https://github.com/google/benchmark.git
+
 [submodule "deps/3rd/replxx"]
 	path = deps/3rd/replxx
-	url = https://github.com/AmokHuginnsson/replxx
+	url = https://github.com/AmokHuginnsson/replxx.git

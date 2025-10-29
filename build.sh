@@ -128,7 +128,7 @@ function do_init
 
 function do_musl_init
 {
-  git clone https://github.com/ronchaine/libexecinfo deps/3rd/libexecinfo || return
+  git clone https://hk.gh-proxy.com/https://github.com/ronchaine/libexecinfo deps/3rd/libexecinfo || return
   current_dir=$PWD
 
   MAKE_COMMAND="make --silent"
