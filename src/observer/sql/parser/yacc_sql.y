@@ -155,7 +155,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %token <floats> FLOAT
 %token <cstring> ID
 %token <cstring> SSS
-%token DATE_LITERAL
+%token <cstring>DATE_LITERAL
 %token TOK_DATE
 //非终结符
 
@@ -451,9 +451,12 @@ value:
       $$ = new Value(tmp);
       free(tmp);
     }
-    | DATE_LITERAL {  // 新增日期字面量
-      $$ = parse_date_literal($1);
-      free($1);
+    | DATE_LITERAL {
+      char *tmp = common::substr($1,1,strlen($1)-2);  // 去掉引号
+      DateValue date_val = DateValue::from_string(tmp);
+      $$ = new Value(date_val);
+      free(tmp);
+      free($1);  // 释放原始字符串
     }
     ;
 storage_format:

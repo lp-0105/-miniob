@@ -39,16 +39,10 @@ Value::Value(const DateValue &date_val) : attr_type_(AttrType::DATES) {
 
 DateValue Value::get_date() const {
     if (attr_type_ != AttrType::DATES) {
-        // 如果不是日期类型，尝试转换
-        Value temp;
-        if (cast_to(*this, AttrType::DATES, temp) == RC::SUCCESS) {
-            return temp.get_date();
-        }
-        return DateValue(); // 返回默认日期
+        return DateValue(1970, 1, 1);
     }
-    
     int date_int = *reinterpret_cast<const int*>(data());
-    return DateValue::from_int(date_int);
+    return DateValue::from_int(date_int); // 调用 DateValue 的静态方法
 }
 
 // 设置日期值
@@ -265,11 +259,34 @@ char *Value::data() const
 string Value::to_string() const
 {
   switch (attr_type_) {
-        case AttrType::DATES: {
-            return get_date().to_string();
-        }
-        // ... 其他类型的处理保持不变
+    case AttrType::UNDEFINED: {
+      return "undefined";
     }
+    case AttrType::CHARS: {
+      return string(data(), length());
+    }
+    case AttrType::INTS: {
+      return std::to_string(get_int());
+    }
+    case AttrType::FLOATS: {
+      return std::to_string(get_float());
+    }
+    case AttrType::BOOLEANS: {
+      return get_boolean() ? "true" : "false";
+    }
+    case AttrType::VECTORS: {
+      return "vector"; // 或者适当的向量表示
+    }
+    case AttrType::DATES: {
+      return get_date().to_string(); // 使用 DateValue 的 to_string 方法
+    }
+    case AttrType::MAXTYPE: {
+      return "maxtype";
+    }
+    default: {
+      return "unknown";
+    }
+  }
   string res;
   RC     rc = DataType::type_instance(this->attr_type_)->to_string(*this, res);
   if (OB_FAIL(rc)) {

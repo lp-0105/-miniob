@@ -19,28 +19,15 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/memory.h"
 #include "common/value.h"
 #include "common/lang/utility.h"
-enum AttrType {
-    INTS = 0,
-    FLOATS,
-    CHARS,
-    VECTORS,
-    DATES  // 新增日期类型
-};
+#include "common/type/attr_type.h"
+#include "common/type/date_value.h"
 
 class Expression;
 
 /**
  * @defgroup SQLParser SQL Parser
  */
-struct DateValue {
-    int year;
-    int month;
-    int day;
-    
-    bool is_valid() const;
-    static bool is_leap_year(int year);
-    int to_int() const; // 转换为整数存储
-};
+
 /**
  * @brief 描述一个属性
  * @ingroup SQLParser
@@ -161,13 +148,7 @@ struct AttrInfoSqlNode
   AttrType type;    ///< Type of attribute
   string   name;    ///< Attribute name
   size_t   length;  ///< Length of attribute
-  // 添加构造函数和日期类型支持
-  AttrInfoSqlNode() : type(INTS), name(""), length(0) {}
-  
-  void set_date_type() {
-      type = DATES;
-      length = sizeof(DateValue); // 或者使用固定长度 10 (YYYY-MM-DD)
-  }
+  bool     nullable = true; ///< 是否可以为空
 };
 
 /**
