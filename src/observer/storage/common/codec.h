@@ -423,6 +423,12 @@ public:
           LOG_WARN("append failed");
         }
         break;
+      case AttrType::DATES:
+        // 日期按 YYYYMMDD 的整数值存储
+        if (OB_FAIL(OrderedCode::append(dst, (int64_t)val.get_date().to_int()))) {
+          LOG_WARN("append failed");
+        }
+        break;
       case AttrType::FLOATS:
         if (OB_FAIL(OrderedCode::append(dst, (double)val.get_float()))) {
           LOG_WARN("append failed");
@@ -437,6 +443,54 @@ public:
     }
     return rc;
   }
+
+    // decode a value of given AttrType from the span bytes (consumes bytes from span)
+    static RC decode_value(span<byte_t> &src, AttrType type, Value &val)
+    {
+      RC rc = RC::SUCCESS;
+      switch (type) {
+        case AttrType::INTS: {
+          int64_t i = 0;
+          if (OB_FAIL(OrderedCode::parse(src, OrderedCode::increasing, i))) {
+            LOG_WARN("parse int failed");
+            return rc;
+          }
+          val.set_int((int)i);
+        } break;
+        case AttrType::DATES: {
+          int64_t d = 0;
+          if (OB_FAIL(OrderedCode::parse(src, OrderedCode::increasing, d))) {
+            LOG_WARN("parse date failed");
+            return rc;
+          }
+          DateValue dv = DateValue::from_int((int)d);
+          // validate date range; if invalid, return INVALID_ARGUMENT
+          if (!dv.is_valid()) {
+            LOG_WARN("decoded date out of range: %d", (int)d);
+            return RC::INVALID_ARGUMENT;
+          }
+          val.set_date(dv);
+        } break;
+        case AttrType::FLOATS: {
+          double f = 0.0;
+          if (OB_FAIL(OrderedCode::parse(src, OrderedCode::increasing, f))) {
+            LOG_WARN("parse float failed");
+            return rc;
+          }
+          val.set_float((float)f);
+        } break;
+        case AttrType::CHARS: {
+          string s;
+          if (OB_FAIL(OrderedCode::parse(src, OrderedCode::increasing, s))) {
+            LOG_WARN("parse string failed");
+            return rc;
+          }
+          val.set_string(s.c_str());
+        } break;
+        default: return RC::INVALID_ARGUMENT;
+      }
+      return rc;
+    }
 
   static RC encode_int(int64_t val, bytes &dst)
   {

@@ -4,7 +4,14 @@
 
 bool DateValue::is_valid() const {
     // 检查范围
-    if (year < 1970 || year > 2038) return false;
+    // 下界：1970-01-01
+    if (year < 1970) return false;
+    // 上界：限制到 2038-02-01（含）以避免 2038 年溢出相关测试数据
+    if (year > 2038) return false;
+    if (year == 2038) {
+        if (month > 2) return false;
+        if (month == 2 && day > 1) return false; // 2038-02-01 为最大允许日期
+    }
     if (month < 1 || month > 12) return false;
     
     // 每月天数

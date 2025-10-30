@@ -36,7 +36,6 @@ Value::Value(const DateValue &date_val) : attr_type_(AttrType::DATES) {
     int date_int = date_val.to_int();
     set_data(reinterpret_cast<char*>(&date_int), sizeof(int));
 }
-
 DateValue Value::get_date() const {
     if (attr_type_ != AttrType::DATES) {
         return DateValue(1970, 1, 1);
@@ -149,6 +148,11 @@ void Value::set_data(char *data, int length)
     case AttrType::BOOLEANS: {
       value_.bool_value_ = *(int *)data != 0;
       length_            = length;
+    } break;
+    case AttrType::DATES: {
+      // 存储为 int (YYYYMMDD)
+      value_.int_value_ = *(int *)data;
+      length_ = length;
     } break;
     default: {
       LOG_WARN("unknown data type: %d", attr_type_);

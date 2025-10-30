@@ -1,4 +1,3 @@
-
 %{
 
 #include <stdio.h>
@@ -117,6 +116,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         LE
         GE
         NE
+        DATE_LITERAL
 
 /** union 中定义各种数据类型，真实生成的代码也是union类型，所以不能有非POD类型的数据 **/
 %union {
@@ -452,11 +452,22 @@ value:
       free(tmp);
     }
     | DATE_LITERAL {
-      char *tmp = common::substr($1,1,strlen($1)-2);  // 去掉引号
-      DateValue date_val = DateValue::from_string(tmp);
-      $$ = new Value(date_val);
+      // DATE_LITERAL is like 'YYYY-MM-DD' (with quotes). strip quotes and parse.
+      char *tmp = common::substr($1, 1, strlen($1) - 2);
+      int y = 0, m = 0, d = 0;
+      if (sscanf(tmp, "%d-%d-%d", &y, &m, &d) != 3) {
+        free(tmp);
+  yyerror(&@$, sql_string, sql_result, scanner, "Invalid DATE format");
+        YYABORT;
+      }
+      DateValue dv(y, m, d);
       free(tmp);
-      free($1);  // 释放原始字符串
+      if (!dv.is_valid()) {
+  yyerror(&@$, sql_string, sql_result, scanner, "Invalid DATE format");
+        YYABORT;
+      }
+      $$ = new Value(dv);
+      @$ = @1;
     }
     ;
 storage_format:
